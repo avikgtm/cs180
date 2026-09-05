@@ -110,22 +110,16 @@ figure:hover {
 figure img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 4;
   object-fit: cover;
   background: var(--bg-alt);
 }
 
 figcaption {
-  padding: 1rem 1.1rem 1.25rem;
-  font-size: 0.95rem;
-  color: var(--ink-soft);
-}
-
-figcaption strong {
-  display: block;
-  color: var(--ink);
+  padding: 1rem 1.1rem 1.1rem;
   font-size: 1rem;
-  margin-bottom: 0.25rem;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .site-footer {
