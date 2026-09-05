@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="g8" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0cdf7"/>
+      <stop offset="100%" stop-color="#7a63c4"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#g8)"/>
+  <rect x="2" y="2" width="796" height="596" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2" stroke-dasharray="10,8" rx="18"/>
+  <text x="50%" y="46%" font-family="Georgia, serif" font-size="54" fill="#ffffff" text-anchor="middle" opacity="0.95">Part 3 — Dolly Zoom GIF</text>
+  <text x="50%" y="58%" font-family="Verdana, sans-serif" font-size="27" fill="#f4f0fb" text-anchor="middle" opacity="0.85">Replace with dolly-zoom.gif</text>
+</svg>
