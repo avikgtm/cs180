@@ -2,20 +2,20 @@
 
 Live site: https://avikgtm.github.io/cs180/
 
-## Swapping in real photos
+## Photos
 
-The page currently shows lavender placeholder graphics. Replace them by adding
-your real files with these exact names (same folders), then update the `src`
-in `index.html` to match the new extension:
+Real photos are in place (converted from iPhone HEIC via macOS `sips`,
+resized to 1600px wide for the web):
 
-| Slot | Placeholder | Replace with |
-|---|---|---|
-| Part 1, photo 1–3 | `images/part1/photo1.svg` ... `photo3.svg` | `images/part1/photo1.jpg` ... `photo3.jpg` |
-| Part 2, photo 1–2 | `images/part2/photo1.svg`, `photo2.svg` | `images/part2/photo1.jpg`, `photo2.jpg` |
-| Part 3, GIF | `images/part3/dolly-zoom-placeholder.svg` | `images/part3/dolly-zoom.gif` |
+| Slot | File |
+|---|---|
+| Part 1, photo 1–3 (close / mid / far portrait) | `images/part1/photo1.jpg` ... `photo3.jpg` |
+| Part 2, photo 1–2 (building far-zoomed / close-no-zoom) | `images/part2/photo1.jpg`, `photo2.jpg` |
+| Part 3, GIF (3-frame dolly zoom) | `images/part3/dolly-zoom.gif` |
 
-After adding real photos, also edit the `<figcaption>` text in `index.html`
-to explain the perspective/focal-length reasoning for each shot.
+To swap in a different photo, replace the file at the same path (keep the
+name and extension) and update the `<figcaption>` text in `index.html` to
+match.
 
 ## Local preview
 
