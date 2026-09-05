@@ -10,7 +10,7 @@ in `index.html` to match the new extension:
 
 | Slot | Placeholder | Replace with |
 |---|---|---|
-| Part 1, photo 1–5 | `images/part1/photo1.svg` ... `photo5.svg` | `images/part1/photo1.jpg` ... `photo5.jpg` |
+| Part 1, photo 1–3 | `images/part1/photo1.svg` ... `photo3.svg` | `images/part1/photo1.jpg` ... `photo3.jpg` |
 | Part 2, photo 1–2 | `images/part2/photo1.svg`, `photo2.svg` | `images/part2/photo1.jpg`, `photo2.jpg` |
 | Part 3, GIF | `images/part3/dolly-zoom-placeholder.svg` | `images/part3/dolly-zoom.gif` |
 
