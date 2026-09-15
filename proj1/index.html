@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CS180 Project 1 — Colorizing the Prokudin-Gorskii Photo Collection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css?v=3" />
+</head>
+<body>
+
+  <header class="site-header">
+    <h1>Colorizing the Prokudin-Gorskii Photo Collection</h1>
+    <p>CS180 — Project 1</p>
+    <p class="byline">by Avik Gautam</p>
+  </header>
+
+  <main>
+
+    <section class="part-section" id="overview">
+      <h2>Overview</h2>
+      <p class="part-intro">
+        Sergei Prokudin-Gorskii photographed the Russian Empire in the early 1900s by
+        exposing three glass plates of the same scene through red, green, and blue
+        filters. Digitized, each plate is a single grayscale image stacked in three
+        bands (B, G, R from top to bottom). Stack the bands directly and the color
+        fringing is obvious &mdash; the plates were never perfectly aligned when shot.
+        This project reconstructs the color photo by searching for the horizontal and
+        vertical shift that best aligns the R and G channels onto the B channel: an
+        exhaustive window search for the small low-res JPEGs, and a coarse-to-fine
+        image pyramid for the much larger TIFF scans.
+      </p>
+    </section>
+
+    <section class="part-section" id="approach">
+      <h2>Approach</h2>
+      <p class="part-intro">
+        <strong>Single-scale search.</strong> For a displacement window of
+        <code>[-15, 15]</code> pixels in x and y, shift one channel (with
+        <code>np.roll</code>) against the reference channel and score the overlap with
+        normalized cross-correlation (NCC). Keep the displacement with the best score.
+      </p>
+      <p class="part-intro">
+        <strong>Multiscale pyramid.</strong> The high-res scans are too large for a
+        brute-force <code>[-15, 15]</code> search at full resolution. Build a Gaussian
+        pyramid (downsample by 2 at each level via <code>sk.transform.rescale</code>),
+        align at the coarsest level first, then refine the offset at each finer level
+        with a small local window around <code>2 &times; previous_offset</code>.
+      </p>
+      <pre class="code-block"><code>def align(im, ref, window=15):
+    best_score, best_shift = -np.inf, (0, 0)
+    for dy in range(-window, window + 1):
+        for dx in range(-window, window + 1):
+            shifted = np.roll(np.roll(im, dy, axis=0), dx, axis=1)
+            score = ncc(shifted, ref)
+            if score > best_score:
+                best_score, best_shift = score, (dy, dx)
+    return best_shift
+
+def pyramid_align(im, ref, levels=5, window=15):
+    if levels == 0:
+        return align(im, ref, window)
+    im_small   = sk.transform.rescale(im,  0.5, channel_axis=None)
+    ref_small  = sk.transform.rescale(ref, 0.5, channel_axis=None)
+    dy, dx = pyramid_align(im_small, ref_small, levels - 1, window)
+    dy, dx = dy * 2, dx * 2
+    # refine with a small window around the coarse estimate
+    ...
+    return dy, dx</code></pre>
+      <p class="todo-note">
+        TODO: replace with your actual implementation once it's working end-to-end —
+        this is scaffolding, not a submission.
+      </p>
+    </section>
+
+    <section class="part-section" id="single-scale">
+      <h2>Part 1: Single-Scale Alignment (low-res JPEGs)</h2>
+      <p class="part-intro">
+        Exhaustive <code>[-15, 15]</code> search on <code>cathedral.jpg</code> and
+        <code>monastery.jpg</code>.
+      </p>
+      <div class="gallery full-image two-up">
+        <figure>
+          <img src="images/cathedral-result.jpg" alt="Aligned cathedral photo" />
+          <figcaption>cathedral.jpg</figcaption>
+        </figure>
+        <figure>
+          <img src="images/monastery-result.jpg" alt="Aligned monastery photo" />
+          <figcaption>monastery.jpg</figcaption>
+        </figure>
+      </div>
+      <table class="offsets">
+        <thead>
+          <tr><th>Image</th><th>G offset (y, x)</th><th>R offset (y, x)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>cathedral.jpg</td><td>TODO</td><td>TODO</td></tr>
+          <tr><td>monastery.jpg</td><td>TODO</td><td>TODO</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="part-section" id="pyramid">
+      <h2>Part 2: Multiscale Pyramid Alignment</h2>
+      <p class="part-intro">
+        Coarse-to-fine pyramid alignment run on all provided <code>.tif</code> examples,
+        with the computed offsets for each listed below.
+      </p>
+      <div class="gallery full-image three-up">
+        <figure>
+          <img src="images/example-result.jpg" alt="TODO: replace with an aligned result" />
+          <figcaption>TODO — image name</figcaption>
+        </figure>
+      </div>
+      <table class="offsets">
+        <thead>
+          <tr><th>Image</th><th>G offset (y, x)</th><th>R offset (y, x)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>TODO</td><td>TODO</td><td>TODO</td></tr>
+        </tbody>
+      </table>
+      <p class="todo-note">
+        TODO: fill in one row per provided example (up to 17 images) and add a result
+        thumbnail for each to the gallery above.
+      </p>
+    </section>
+
+    <section class="part-section" id="own-images">
+      <h2>Part 3: Selected Images</h2>
+      <p class="part-intro">
+        Three additional plates chosen from the
+        <a href="https://www.loc.gov/pictures/collection/prok/">full Prokudin-Gorskii collection</a>
+        at the Library of Congress.
+      </p>
+      <div class="gallery full-image three-up">
+        <figure>
+          <img src="images/own1-result.jpg" alt="TODO: self-selected image 1" />
+          <figcaption>TODO — image 1</figcaption>
+        </figure>
+        <figure>
+          <img src="images/own2-result.jpg" alt="TODO: self-selected image 2" />
+          <figcaption>TODO — image 2</figcaption>
+        </figure>
+        <figure>
+          <img src="images/own3-result.jpg" alt="TODO: self-selected image 3" />
+          <figcaption>TODO — image 3</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="part-section" id="failures-bells">
+      <h2>Failures &amp; Bells and Whistles</h2>
+      <p class="part-intro">
+        <span class="todo-note">
+          TODO: discuss any images where alignment failed and why (e.g. NCC getting
+          fooled by borders or exposure differences), and describe any extras
+          implemented &mdash; automatic border cropping, contrast/edge-based alignment
+          instead of raw pixels, etc. &mdash; with before/after comparisons.
+        </span>
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>CS180, Fall 2026 — <a href="https://cal-cs180.github.io/fa26/hw/proj1/index.html">Project 1 Assignment</a></p>
+  </footer>
+
+</body>
+</html>

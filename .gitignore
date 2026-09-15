@@ -1,2 +1,8 @@
 .claude/
 .DS_Store
+
+# proj1: raw Prokudin-Gorskii plates (large .tif/.jpg inputs) — never commit
+proj1/data/
+__pycache__/
+*.pyc
+.venv/

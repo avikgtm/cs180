@@ -147,3 +147,65 @@ figcaption {
     font-size: 2rem;
   }
 }
+
+/* --- proj1: full (uncropped) result images, offsets table, code blocks --- */
+
+.gallery.full-image img {
+  aspect-ratio: auto;
+  object-fit: contain;
+}
+
+.gallery.three-up {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+table.offsets {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0 2.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+table.offsets th,
+table.offsets td {
+  padding: 0.7rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+table.offsets th {
+  background: var(--bg-alt);
+  color: var(--lavender-darker);
+  font-weight: 700;
+}
+
+table.offsets tr:last-child td {
+  border-bottom: none;
+}
+
+pre.code-block {
+  background: var(--ink);
+  color: #f6f2fc;
+  padding: 1.2rem 1.4rem;
+  border-radius: 14px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  box-shadow: var(--shadow);
+}
+
+.todo-note {
+  color: var(--accent);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .gallery.three-up {
+    grid-template-columns: 1fr;
+  }
+}
