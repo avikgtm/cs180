@@ -1,6 +1,8 @@
 import numpy as np
 import cv2 as cv
 
+### All code is found in this .py file! Simply run colorize() on the image's filepath and 
+### set the output filepath and you're good to go!
 
 def ncc(im1, im2):
     mc1 = im1 - np.mean(im1)
