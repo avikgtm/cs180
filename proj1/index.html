@@ -11,6 +11,11 @@
 </head>
 <body>
 
+  <nav class="site-nav">
+    <a href="../index.html">Project 0</a>
+    <a href="index.html" class="current">Project 1</a>
+  </nav>
+
   <header class="site-header">
     <h1>Colorizing the Prokudin-Gorskii Photo Collection</h1>
     <p>CS180 — Project 1</p>
@@ -40,48 +45,65 @@
         <strong>Single-scale search.</strong> For a displacement window of
         <code>[-15, 15]</code> pixels in x and y, shift one channel (with
         <code>np.roll</code>) against the reference channel and score the overlap with
-        normalized cross-correlation (NCC). Keep the displacement with the best score.
+        normalized cross-correlation (NCC), computed after cropping 10% off each
+        border so filter-edge artifacts don't dominate the score. Keep the
+        displacement with the best score.
       </p>
       <p class="part-intro">
         <strong>Multiscale pyramid.</strong> The high-res scans are too large for a
         brute-force <code>[-15, 15]</code> search at full resolution. Build a Gaussian
-        pyramid (downsample by 2 at each level via <code>sk.transform.rescale</code>),
-        align at the coarsest level first, then refine the offset at each finer level
-        with a small local window around <code>2 &times; previous_offset</code>.
+        pyramid (downsample by 2 at each level via <code>cv.pyrDown</code>) down to a
+        base case under 100px, align at the coarsest level first, then double the
+        recovered offset at each finer level and refine with a smaller
+        <code>[-8, 8]</code> window around it.
       </p>
-      <pre class="code-block"><code>def align(im, ref, window=15):
-    best_score, best_shift = -np.inf, (0, 0)
-    for dy in range(-window, window + 1):
-        for dx in range(-window, window + 1):
-            shifted = np.roll(np.roll(im, dy, axis=0), dx, axis=1)
-            score = ncc(shifted, ref)
-            if score > best_score:
-                best_score, best_shift = score, (dy, dx)
-    return best_shift
+      <pre class="code-block"><code>def ncc(im1, im2):
+    mc1 = im1 - np.mean(im1)
+    mc2 = im2 - np.mean(im2)
+    return np.sum(mc1 * mc2) / (np.linalg.norm(mc1) * np.linalg.norm(mc2))
 
-def pyramid_align(im, ref, levels=5, window=15):
-    if levels == 0:
+def align(im, ref, window=15):
+    crop_im = crop_border(im)
+    crop_ref = crop_border(ref)
+    best_ncc = -np.inf
+    dx, dy = 0, 0
+    for x in range(-window, window+1):
+        x_roll = np.roll(crop_im, x, axis=1)
+        for y in range(-window, window+1):
+            curr_ncc = ncc(np.roll(x_roll, y, axis=0), crop_ref)
+            if curr_ncc > best_ncc:
+                best_ncc = curr_ncc
+                dx = x
+                dy = y
+    return (dy, dx)
+
+def crop_border(im, pct=10):
+    crop_y = int(round(im.shape[0] * (pct/100.0)))
+    crop_x = int(round(im.shape[1] * (pct/100.0)))
+    return im[crop_y:im.shape[0] - crop_y, crop_x:im.shape[1] - crop_x]
+
+def pyramid_align(im, ref, levels=3, window=15):
+    if levels == 0 or im.shape[0] < 100 or im.shape[1] < 100:
         return align(im, ref, window)
-    im_small   = sk.transform.rescale(im,  0.5, channel_axis=None)
-    ref_small  = sk.transform.rescale(ref, 0.5, channel_axis=None)
-    dy, dx = pyramid_align(im_small, ref_small, levels - 1, window)
-    dy, dx = dy * 2, dx * 2
-    # refine with a small window around the coarse estimate
-    ...
-    return dy, dx</code></pre>
-      <p class="todo-note">
-        TODO: replace with your actual implementation once it's working end-to-end —
-        this is scaffolding, not a submission.
+    down_im = cv.pyrDown(im)
+    down_ref = cv.pyrDown(ref)
+    pyr_align = pyramid_align(down_im, down_ref, levels - 1, window)
+    al = (pyr_align[0]*2, pyr_align[1]*2)
+    alim = np.roll(np.roll(im, al[0], axis=0), al[1], axis=1)
+    residual = align(alim, ref, 8)
+    return (al[0] + residual[0], al[1] + residual[1])</code></pre>
+      <p class="part-intro">
+        Full source: <a href="code/align.py">code/align.py</a>.
       </p>
     </section>
 
     <section class="part-section" id="single-scale">
       <h2>Part 1: Single-Scale Alignment (low-res JPEGs)</h2>
       <p class="part-intro">
-        Exhaustive <code>[-15, 15]</code> search on <code>cathedral.jpg</code> and
-        <code>monastery.jpg</code>.
+        Exhaustive <code>[-15, 15]</code> search on <code>cathedral.jpg</code>,
+        <code>monastery.jpg</code>, and <code>tobolsk.jpg</code>.
       </p>
-      <div class="gallery full-image two-up">
+      <div class="gallery full-image three-up">
         <figure>
           <img src="images/cathedral-result.jpg" alt="Aligned cathedral photo" />
           <figcaption>cathedral.jpg</figcaption>
@@ -90,14 +112,19 @@ def pyramid_align(im, ref, levels=5, window=15):
           <img src="images/monastery-result.jpg" alt="Aligned monastery photo" />
           <figcaption>monastery.jpg</figcaption>
         </figure>
+        <figure>
+          <img src="images/tobolsk-result.jpg" alt="Aligned tobolsk photo" />
+          <figcaption>tobolsk.jpg</figcaption>
+        </figure>
       </div>
       <table class="offsets">
         <thead>
           <tr><th>Image</th><th>G offset (y, x)</th><th>R offset (y, x)</th></tr>
         </thead>
         <tbody>
-          <tr><td>cathedral.jpg</td><td>TODO</td><td>TODO</td></tr>
-          <tr><td>monastery.jpg</td><td>TODO</td><td>TODO</td></tr>
+          <tr><td>cathedral.jpg</td><td>(5, 2)</td><td>(12, 3)</td></tr>
+          <tr><td>monastery.jpg</td><td>(-3, 2)</td><td>(3, 2)</td></tr>
+          <tr><td>tobolsk.jpg</td><td>(3, 3)</td><td>(6, 3)</td></tr>
         </tbody>
       </table>
     </section>
@@ -105,13 +132,53 @@ def pyramid_align(im, ref, levels=5, window=15):
     <section class="part-section" id="pyramid">
       <h2>Part 2: Multiscale Pyramid Alignment</h2>
       <p class="part-intro">
-        Coarse-to-fine pyramid alignment run on all provided <code>.tif</code> examples,
+        Coarse-to-fine pyramid alignment run on all 11 provided <code>.tif</code> examples,
         with the computed offsets for each listed below.
       </p>
       <div class="gallery full-image three-up">
         <figure>
-          <img src="images/example-result.jpg" alt="TODO: replace with an aligned result" />
-          <figcaption>TODO — image name</figcaption>
+          <img src="images/church-result.jpg" alt="Aligned church photo" />
+          <figcaption>church.tif</figcaption>
+        </figure>
+        <figure>
+          <img src="images/emir-result.jpg" alt="Aligned emir photo" />
+          <figcaption>emir.tif</figcaption>
+        </figure>
+        <figure>
+          <img src="images/harvesters-result.jpg" alt="Aligned harvesters photo" />
+          <figcaption>harvesters.tif</figcaption>
+        </figure>
+        <figure>
+          <img src="images/icon-result.jpg" alt="Aligned icon photo" />
+          <figcaption>icon.tif</figcaption>
+        </figure>
+        <figure>
+          <img src="images/ilemselga-result.jpg" alt="Aligned ilemselga photo" />
+          <figcaption>ilemselga.tif</figcaption>
+        </figure>
+        <figure>
+          <img src="images/melons-result.jpg" alt="Aligned melons photo" />
+          <figcaption>melons.tif</figcaption>
+        </figure>
+        <figure>
+          <img src="images/religous_painting-result.jpg" alt="Aligned religious painting photo" />
+          <figcaption>religous_painting.tif</figcaption>
+        </figure>
+        <figure>
+          <img src="images/self_portrait-result.jpg" alt="Aligned self portrait photo" />
+          <figcaption>self_portrait.tif</figcaption>
+        </figure>
+        <figure>
+          <img src="images/siren-result.jpg" alt="Aligned siren photo" />
+          <figcaption>siren.tif</figcaption>
+        </figure>
+        <figure>
+          <img src="images/three_generations-result.jpg" alt="Aligned three generations photo" />
+          <figcaption>three_generations.tif</figcaption>
+        </figure>
+        <figure>
+          <img src="images/wharf-result.jpg" alt="Aligned wharf photo" />
+          <figcaption>wharf.tif</figcaption>
         </figure>
       </div>
       <table class="offsets">
@@ -119,36 +186,56 @@ def pyramid_align(im, ref, levels=5, window=15):
           <tr><th>Image</th><th>G offset (y, x)</th><th>R offset (y, x)</th></tr>
         </thead>
         <tbody>
-          <tr><td>TODO</td><td>TODO</td><td>TODO</td></tr>
+          <tr><td>church.tif</td><td>(25, 4)</td><td>(58, -4)</td></tr>
+          <tr><td>emir.tif</td><td>(49, 24)</td><td>(103, 56)</td></tr>
+          <tr><td>harvesters.tif</td><td>(60, 17)</td><td>(124, 14)</td></tr>
+          <tr><td>icon.tif</td><td>(41, 17)</td><td>(90, 23)</td></tr>
+          <tr><td>ilemselga.tif</td><td>(40, 7)</td><td>(130, 11)</td></tr>
+          <tr><td>melons.tif</td><td>(82, 10)</td><td>(176, 12)</td></tr>
+          <tr><td>religous_painting.tif</td><td>(28, 3)</td><td>(68, 7)</td></tr>
+          <tr><td>self_portrait.tif</td><td>(79, 29)</td><td>(176, 37)</td></tr>
+          <tr><td>siren.tif</td><td>(49, -6)</td><td>(96, -25)</td></tr>
+          <tr><td>three_generations.tif</td><td>(53, 14)</td><td>(112, 11)</td></tr>
+          <tr><td>wharf.tif</td><td>(15, -7)</td><td>(83, -16)</td></tr>
         </tbody>
       </table>
-      <p class="todo-note">
-        TODO: fill in one row per provided example (up to 17 images) and add a result
-        thumbnail for each to the gallery above.
-      </p>
     </section>
 
     <section class="part-section" id="own-images">
       <h2>Part 3: Selected Images</h2>
       <p class="part-intro">
         Three additional plates chosen from the
-        <a href="https://www.loc.gov/pictures/collection/prok/">full Prokudin-Gorskii collection</a>
+        <a href="https://www.loc.gov/collections/prokudin-gorskii/?st=grid">full Prokudin-Gorskii collection</a>
         at the Library of Congress.
+      </p>
+      <p class="todo-note">
+        TODO: say why you picked these three (subject matter, expected difficulty,
+        interesting failure modes, etc.).
       </p>
       <div class="gallery full-image three-up">
         <figure>
-          <img src="images/own1-result.jpg" alt="TODO: self-selected image 1" />
-          <figcaption>TODO — image 1</figcaption>
+          <img src="images/mosque-result.jpg" alt="Aligned mosque photo" />
+          <figcaption>mosque.tif — TODO: title/link from the LOC collection</figcaption>
         </figure>
         <figure>
-          <img src="images/own2-result.jpg" alt="TODO: self-selected image 2" />
-          <figcaption>TODO — image 2</figcaption>
+          <img src="images/napoleon-result.jpg" alt="Aligned napoleon photo" />
+          <figcaption>napoleon.tif — TODO: title/link from the LOC collection</figcaption>
         </figure>
         <figure>
-          <img src="images/own3-result.jpg" alt="TODO: self-selected image 3" />
-          <figcaption>TODO — image 3</figcaption>
+          <img src="images/woman-result.jpg" alt="Aligned woman photo" />
+          <figcaption>woman.tif — TODO: title/link from the LOC collection</figcaption>
         </figure>
       </div>
+      <table class="offsets">
+        <thead>
+          <tr><th>Image</th><th>G offset (y, x)</th><th>R offset (y, x)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>mosque.tif</td><td>(32, 4)</td><td>(79, 7)</td></tr>
+          <tr><td>napoleon.tif</td><td>(63, 5)</td><td>(133, -2)</td></tr>
+          <tr><td>woman.tif</td><td>(38, 21)</td><td>(76, 35)</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <section class="part-section" id="failures-bells">
