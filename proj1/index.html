@@ -30,32 +30,35 @@
         Sergei Prokudin-Gorskii photographed the Russian Empire in the early 1900s by
         exposing three glass plates of the same scene through red, green, and blue
         filters. Digitized, each plate is a single grayscale image stacked in three
-        bands (B, G, R from top to bottom). Stack the bands directly and the color
-        fringing is obvious &mdash; the plates were never perfectly aligned when shot.
-        This project reconstructs the color photo by searching for the horizontal and
-        vertical shift that best aligns the R and G channels onto the B channel: an
-        exhaustive window search for the small low-res JPEGs, and a coarse-to-fine
-        image pyramid for the much larger TIFF scans.
+        bands (B, G, R from top to bottom). If you manually attempt to stack the bands,
+        you receive a misaligned image. The project below reconstructs the color photo
+        by running an alignment program on the digitized version of the filters.
       </p>
     </section>
 
     <section class="part-section" id="approach">
       <h2>Approach</h2>
       <p class="part-intro">
-        <strong>Single-scale search.</strong> For a displacement window of
-        <code>[-15, 15]</code> pixels in x and y, shift one channel (with
-        <code>np.roll</code>) against the reference channel and score the overlap with
-        normalized cross-correlation (NCC), computed after cropping 10% off each
-        border so filter-edge artifacts don't dominate the score. Keep the
-        displacement with the best score.
+        <strong>Single-scale search</strong> For small files, I used a single-scale search using NCC and border-cropping. Since the files were smaller, 
+        I could justify using a 31-length window (-15 -> +15). This means I was testing a total of 961 (31 x 31) offsets. To pick which offset worked best 
+        I used NCC (see ncc() in the code block below). NCC takes the image as a 2D numpy array and mean-centers it by subtracting each pixel from the mean 
+        of the whole image. It then sums the product of the mean-centered arrays and divides that by the product of the normalized mean-centered array. This 
+        gives us a score on the range [-1, 1], with higher values corresponding with more correlated images. For single-scale search (align()), I chose the
+        offset with the highest NCC score to align the images.
       </p>
       <p class="part-intro">
-        <strong>Multiscale pyramid.</strong> The high-res scans are too large for a
-        brute-force <code>[-15, 15]</code> search at full resolution. Build a Gaussian
-        pyramid (downsample by 2 at each level via <code>cv.pyrDown</code>) down to a
-        base case under 100px, align at the coarsest level first, then double the
-        recovered offset at each finer level and refine with a smaller
-        <code>[-8, 8]</code> window around it.
+        <strong>Pyramid Alignment</strong> On images with larger dimensions, the 15 pixel offset window may not be enough to correctly align the images. To
+        mitigate this issue, I used pyramid alignment. Pyramid alignment scales down the image to a lower resolution, aligns based on this resolution, and then
+        converts it back to the original resolution. This allows us to run our alignment on high resolution images without having to iterate over a much larger
+        window. The pyramid_align() function achieves this by scaling down both the image and reference, and recursively calls the pyramid_align() function on 
+        these new versions. The base case simply runs an alignment with the original 15 pixel offset window. Once the recursive call returns, the function runs
+        an alignment on a smaller window to make minor corrections due to the lower resolution. 
+      </p>
+      <p class="part-intro">
+        <strong>Border Cropping</strong> One issue I noticed while attempting to align the images was poor cropping of the filters border from the initial scan. 
+        This caused my ncc() function to hallucinate a higher score based on the border's alignment, whereas the actual picture was not well aligned. To mitigate
+        this issue, I implemented a crop_border() function that crops the border of the passed in image by 10%. This is used directly in the align() function, which 
+        is also used within the pyramid_align() function, allowing each scoring to be on a better cropped image.
       </p>
       <pre class="code-block"><code>def ncc(im1, im2):
     mc1 = im1 - np.mean(im1)
@@ -215,15 +218,15 @@ def pyramid_align(im, ref, levels=3, window=15):
       <div class="gallery full-image three-up">
         <figure>
           <img src="images/mosque-result.jpg" alt="Aligned mosque photo" />
-          <figcaption>mosque.tif — TODO: title/link from the LOC collection</figcaption>
+          <figcaption>mosque.tif</figcaption>
         </figure>
         <figure>
           <img src="images/napoleon-result.jpg" alt="Aligned napoleon photo" />
-          <figcaption>napoleon.tif — TODO: title/link from the LOC collection</figcaption>
+          <figcaption>napoleon.tif</figcaption>
         </figure>
         <figure>
           <img src="images/woman-result.jpg" alt="Aligned woman photo" />
-          <figcaption>woman.tif — TODO: title/link from the LOC collection</figcaption>
+          <figcaption>woman.tif</figcaption>
         </figure>
       </div>
       <table class="offsets">
@@ -237,19 +240,6 @@ def pyramid_align(im, ref, levels=3, window=15):
         </tbody>
       </table>
     </section>
-
-    <section class="part-section" id="failures-bells">
-      <h2>Failures &amp; Bells and Whistles</h2>
-      <p class="part-intro">
-        <span class="todo-note">
-          TODO: discuss any images where alignment failed and why (e.g. NCC getting
-          fooled by borders or exposure differences), and describe any extras
-          implemented &mdash; automatic border cropping, contrast/edge-based alignment
-          instead of raw pixels, etc. &mdash; with before/after comparisons.
-        </span>
-      </p>
-    </section>
-
   </main>
 
   <footer class="site-footer">
