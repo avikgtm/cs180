@@ -138,13 +138,23 @@ output = np.zeros(im.shape)</code></pre>
     <section class="part-section" id="part1-2">
       <h2>Part 1.2: Finite Difference Operator</h2>
       <p class="part-intro">
-        TODO: briefly explain convolving the cameraman image with <em>D</em><sub><em>x</em></sub> and
-        <em>D</em><sub><em>y</em></sub> to get the partial derivatives, and how the gradient magnitude
-        combines them.
+        In this section, I detected edges in the cameraman image using finite difference operators.
+        Convolving the image with <em>D</em><sub><em>x</em></sub> = [1, 0, −1] and <em>D</em><sub><em>y</em></sub> = [1, 0, −1]<sup>T</sup> gives the
+        partial derivatives in <em>x</em> and <em>y</em>, which respond to vertical and horizontal
+        edges respectively. Combining them gives the gradient magnitude, which measures edge strength
+        in any direction, and thresholding that gives a binary edge image.
       </p>
 
       <h3>Partial Derivatives &amp; Gradient Magnitude</h3>
-      <div class="gallery full-image">
+      <p class="part-intro">
+        At each pixel, the two partial derivatives form the gradient vector, and its length is the
+        gradient magnitude:
+        &radic;((&part;I/&part;x)<sup>2</sup> + (&part;I/&part;y)<sup>2</sup>).
+      </p>
+      <pre class="code-block"><code>dx = convolve2d(im, DX, mode="same")
+dy = convolve2d(im, DY, mode="same")
+grad_mag = np.sqrt(dx ** 2 + dy ** 2)</code></pre>
+      <div class="gallery full-image three-up">
         <figure>
           <img src="images/part1_2/cameraman_dx.jpg" alt="Cameraman partial derivative in x" />
           <figcaption>&part;I/&part;x</figcaption>
@@ -161,13 +171,22 @@ output = np.zeros(im.shape)</code></pre>
 
       <h3>Binarized Edge Image</h3>
       <p class="part-intro">
-        TODO: state the threshold you chose and justify the tradeoff between keeping all real edges
-        and suppressing noise (e.g. the grass at the bottom).
+        <strong>Threshold</strong> I chose a threshold of 0.25 on the gradient magnitude. This
+        threshold gave enough definition on the main subject while mostly suppressing the noisy grass
+        in the original image.
       </p>
+      <p class="part-intro">
+        <strong>Tradeoff</strong> One major flaw is that it practically ignores the buildings in the
+        background, as their edges are much lighter and less defined. This meant that while picking a
+        threshold, I had to choose between a much noisier image where the buildings had definition, or
+        a much cleaner image where the buildings were nearly non-existent.
+      </p>
+      <pre class="code-block"><code>threshold = 0.25
+edges = grad_mag &gt; threshold</code></pre>
       <div class="gallery full-image single">
         <figure>
           <img src="images/part1_2/cameraman_edges.jpg" alt="Cameraman binarized edge image" />
-          <figcaption>Edges (threshold = TODO)</figcaption>
+          <figcaption>Edges (threshold = 0.25)</figcaption>
         </figure>
       </div>
     </section>
