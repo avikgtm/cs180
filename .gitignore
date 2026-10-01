@@ -6,3 +6,6 @@ proj1/data/
 __pycache__/
 *.pyc
 .venv/
+
+# proj2: raw input photos — never commit
+proj2/data/

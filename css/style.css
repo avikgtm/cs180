@@ -239,3 +239,21 @@ pre.code-block {
     grid-template-columns: 1fr;
   }
 }
+
+/* --- proj2: subsection headers, inline code --- */
+
+.part-section h3 {
+  font-family: "Georgia", serif;
+  font-size: 1.3rem;
+  color: var(--lavender-deep);
+  margin: 2.5rem 0 0.2rem;
+}
+
+.part-intro code,
+.part-section h3 code {
+  font-size: 0.9em;
+  background: var(--bg-alt);
+  color: var(--lavender-darker);
+  padding: 0.1em 0.35em;
+  border-radius: 6px;
+}
