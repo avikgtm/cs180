@@ -306,7 +306,124 @@ print(np.allclose(grad_mag[10:-10, 10:-10], dog_grad_mag[10:-10, 10:-10]))  # Tr
 
     <section class="part-section" id="part2-1">
       <h2>Part 2.1: Image "Sharpening"</h2>
-      <p class="part-intro">TODO</p>
+      <p class="part-intro">
+        To sharpen an image, we first blur it with a Gaussian. This acts as a low-pass filter, removing
+        the high frequencies from the original image. If we then subtract the blurred image from the
+        original, we are left with only the high frequencies. By adding a scaled amount (&alpha;) of
+        these back to the original image, we get an output image with the high frequencies emphasized,
+        which makes it look sharper.
+      </p>
+
+      <h3>Unsharp Mask Filter</h3>
+      <p class="part-intro">
+        These steps can be combined into a single convolution. Written out, sharpening is
+        <em>f</em> + &alpha;(<em>f</em> &minus; <em>f</em> * <em>G</em>). To pull out <em>f</em>, we
+        rewrite it as <em>f</em> * <em>e</em>, where <em>e</em> is the unit impulse: a kernel that
+        returns the same image when convolved with it. This gives us
+        <em>f</em> * ((1 + &alpha;)<em>e</em> &minus; &alpha;<em>G</em>), so we can build this one
+        kernel, the unsharp mask filter, and convolve the image with it once. I used &sigma; = 2
+        (13×13 kernel) and &alpha; = 1, and the single-filter result matched the step-by-step version
+        exactly.
+      </p>
+      <pre class="code-block"><code>blurred = conv_color(im, G)
+high = im - blurred
+sharpened = im + alpha * high
+
+e = np.zeros(G.shape)
+e[ksize // 2, ksize //2] = 1
+unsharp = (1 + alpha) * e - alpha * G
+sharpened_2 = conv_color(im, unsharp)
+
+print(np.allclose(sharpened_2, sharpened))  # True</code></pre>
+
+      <h3>Taj Mahal</h3>
+      <div class="gallery full-image">
+        <figure>
+          <img src="images/part2_1/taj_original.jpg" alt="Taj Mahal original" />
+          <figcaption>Original</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_1/taj_blurred.jpg" alt="Taj Mahal blurred" />
+          <figcaption>Blurred (low frequencies)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_1/taj_high.jpg" alt="Taj Mahal high frequencies" />
+          <figcaption>High frequencies</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_1/taj_sharpened.jpg" alt="Taj Mahal sharpened" />
+          <figcaption>Sharpened (&alpha; = 1)</figcaption>
+        </figure>
+      </div>
+
+      <h3>Varying the Sharpening Amount</h3>
+      <p class="part-intro">
+        As seen in the Taj Mahal images, the more we increase &alpha;, the more high-frequency noise
+        we introduce to the image.
+      </p>
+      <div class="gallery full-image">
+        <figure>
+          <img src="images/part2_1/taj_alpha_0.5.jpg" alt="Taj Mahal sharpened with alpha 0.5" />
+          <figcaption>&alpha; = 0.5</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_1/taj_alpha_1.jpg" alt="Taj Mahal sharpened with alpha 1" />
+          <figcaption>&alpha; = 1</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_1/taj_alpha_2.jpg" alt="Taj Mahal sharpened with alpha 2" />
+          <figcaption>&alpha; = 2</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_1/taj_alpha_4.jpg" alt="Taj Mahal sharpened with alpha 4" />
+          <figcaption>&alpha; = 4</figcaption>
+        </figure>
+      </div>
+
+      <h3>Dog</h3>
+      <p class="part-intro">
+        The dog photo is much blurrier than the others. Although sharpening strengthens the
+        high-frequency edges, the blurriness still dominates the image. This may be because the image
+        is blurry from actual camera shake rather than low resolution.
+      </p>
+      <div class="gallery full-image">
+        <figure>
+          <img src="images/part2_1/dog_original.jpg" alt="Dog original" />
+          <figcaption>Original</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_1/dog_blurred.jpg" alt="Dog blurred" />
+          <figcaption>Blurred (low frequencies)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_1/dog_high.jpg" alt="Dog high frequencies" />
+          <figcaption>High frequencies</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_1/dog_sharpened.jpg" alt="Dog sharpened" />
+          <figcaption>Sharpened (&alpha; = 1)</figcaption>
+        </figure>
+      </div>
+
+      <h3>Blur, Then Re-sharpen</h3>
+      <p class="part-intro">
+        Re-sharpening the image after manually blurring it doesn't perfectly recreate the original.
+        As noted in the Taj Mahal images, the high &alpha; also introduces some high-frequency noise.
+      </p>
+      <div class="gallery full-image three-up">
+        <figure>
+          <img src="images/part2_1/sharp_original.jpg" alt="Sharp original image" />
+          <figcaption>Original</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_1/sharp_blurred.jpg" alt="Sharp image after blurring" />
+          <figcaption>Blurred</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_1/sharp_resharpened.jpg" alt="Blurred image after sharpening" />
+          <figcaption>Re-sharpened (&alpha; = 4)</figcaption>
+        </figure>
+      </div>
     </section>
 
     <section class="part-section" id="part2-2">
