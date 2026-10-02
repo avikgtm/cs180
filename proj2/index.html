@@ -193,7 +193,115 @@ edges = grad_mag &gt; threshold</code></pre>
 
     <section class="part-section" id="part1-3">
       <h2>Part 1.3: Derivative of Gaussian (DoG) Filter</h2>
-      <p class="part-intro">TODO</p>
+      <p class="part-intro">
+        In 1.2, the gradient strengths of the grass and the background buildings overlapped, so no
+        threshold on the finite differences could separate them. Here in 1.3, we first smooth the
+        image with a Gaussian filter <em>G</em>, which averages out the random pixel-to-pixel changes
+        while keeping the real edges.
+      </p>
+      <p class="part-intro">
+        <strong>Parameters</strong> &sigma; = 2, 13×13 kernel (size 6&sigma; + 1), built with
+        <code>cv2.getGaussianKernel</code> and an outer product with its transpose. Edge threshold = 0.05.
+      </p>
+
+      <h3>Blur, Then Differentiate</h3>
+      <p class="part-intro">
+        First, we convolve the image with the Gaussian to blur it. Then we convolve the blurred image
+        with <em>D</em><sub><em>x</em></sub> and <em>D</em><sub><em>y</em></sub> and compute the gradient magnitude as we did in 1.2.
+      </p>
+      <pre class="code-block"><code>sigma = 2
+ksize = (sigma * 6) + 1
+g = cv2.getGaussianKernel(ksize, sigma)
+G = g @ g.T
+
+blurred = convolve2d(im, G, mode="same")
+dx = convolve2d(blurred, DX, mode="same")
+dy = convolve2d(blurred, DY, mode="same")
+grad_mag = np.sqrt(dx ** 2 + dy ** 2)
+edges = grad_mag &gt; 0.05</code></pre>
+      <div class="gallery full-image three-up">
+        <figure>
+          <img src="images/part1_3/cameraman_blurred.jpg" alt="Cameraman blurred with Gaussian" />
+          <figcaption>Blurred</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part1_3/cameraman_blur_dx.jpg" alt="Blurred cameraman partial derivative in x" />
+          <figcaption>&part;I/&part;x (blurred)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part1_3/cameraman_blur_dy.jpg" alt="Blurred cameraman partial derivative in y" />
+          <figcaption>&part;I/&part;y (blurred)</figcaption>
+        </figure>
+      </div>
+      <div class="gallery full-image two-up">
+        <figure>
+          <img src="images/part1_3/cameraman_blur_grad_mag.jpg" alt="Blurred cameraman gradient magnitude" />
+          <figcaption>Gradient magnitude (blurred)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part1_3/cameraman_blur_edges.jpg" alt="Blurred cameraman binarized edges" />
+          <figcaption>Edges (threshold = 0.05)</figcaption>
+        </figure>
+      </div>
+
+      <h3>Differences from 1.2</h3>
+      <p class="part-intro">
+        <strong>Noise</strong> We are now able to create an edge image with much more definition and
+        without most of the grass noise found in 1.2. There are far fewer isolated pixels in the grass,
+        and the outlines of the buildings in the back are much more defined. This is because the
+        Gaussian averages out the grass noise, while the real edges survive since they are larger and
+        more consistent.
+      </p>
+      <p class="part-intro">
+        <strong>Edge thickness</strong> The edges are also much thicker, since the blur spreads each
+        edge over more pixels and the lower threshold keeps more of that spread.
+      </p>
+      <div class="gallery full-image two-up">
+        <figure>
+          <img src="images/part1_2/cameraman_edges.jpg" alt="Finite difference edges from Part 1.2" />
+          <figcaption>Finite difference (1.2, threshold = 0.25)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part1_3/cameraman_blur_edges.jpg" alt="Gaussian-smoothed edges" />
+          <figcaption>Gaussian smoothed (1.3, &sigma; = 2, threshold = 0.05)</figcaption>
+        </figure>
+      </div>
+
+      <h3>Derivative of Gaussian Filters</h3>
+      <p class="part-intro">
+        Since convolution is associative, (<em>I</em> * <em>G</em>) * <em>D</em><sub><em>x</em></sub> =
+        <em>I</em> * (<em>G</em> * <em>D</em><sub><em>x</em></sub>). So we can instead convolve the Gaussian with <em>D</em><sub><em>x</em></sub> and
+        <em>D</em><sub><em>y</em></sub> once, creating the derivative of Gaussian (DoG) filters. We then convolve the image with
+        these filters and compute the gradient magnitude as in 1.2. The DoG filters are built once on
+        the small kernel, so the image itself only needs one convolution per direction.
+      </p>
+      <pre class="code-block"><code>dog_x = convolve2d(G, DX, mode="full")
+dog_y = convolve2d(G, DY, mode="full")
+dx = convolve2d(im, dog_x, mode="same")
+dy = convolve2d(im, dog_y, mode="same")
+dog_grad_mag = np.sqrt(dx ** 2 + dy ** 2)
+
+print(np.allclose(grad_mag[10:-10, 10:-10], dog_grad_mag[10:-10, 10:-10]))  # True</code></pre>
+      <p class="part-intro">
+        <strong>Verification</strong> The gradient magnitudes from both methods are equal
+        (<code>np.allclose</code> returns <code>True</code>) everywhere except the outermost 1-pixel
+        border of the image. The DoG filters are 13×15 (<em>x</em>) and 15×13 (<em>y</em>), shown below
+        enlarged 20×.
+      </p>
+      <div class="gallery full-image three-up">
+        <figure>
+          <img src="images/part1_3/dog_x.jpg" alt="Derivative of Gaussian filter in x" />
+          <figcaption>DoG filter (<em>G</em> * <em>D</em><sub><em>x</em></sub>)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part1_3/dog_y.jpg" alt="Derivative of Gaussian filter in y" />
+          <figcaption>DoG filter (<em>G</em> * <em>D</em><sub><em>y</em></sub>)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part1_3/cameraman_dog_edges.jpg" alt="Edges from DoG filters" />
+          <figcaption>Edges via DoG (threshold = 0.05)</figcaption>
+        </figure>
+      </div>
     </section>
 
     <section class="part-section" id="part2-1">
