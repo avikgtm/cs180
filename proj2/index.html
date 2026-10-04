@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../css/style.css?v=4" />
+  <link rel="stylesheet" href="../css/style.css?v=6" />
 </head>
 <body>
 
@@ -24,6 +24,15 @@
   </header>
 
   <main>
+
+    <nav class="sub-tabs">
+      <a href="#tab-convolutions" data-tab="tab-convolutions">Convolutions</a>
+      <a href="#tab-sharpening" data-tab="tab-sharpening">Sharpening</a>
+      <a href="#tab-hybrid" data-tab="tab-hybrid">Hybrid Images</a>
+      <a href="#tab-blending" data-tab="tab-blending">Blending</a>
+    </nav>
+
+    <div class="tab-panel" id="tab-convolutions">
 
     <section class="part-section" id="part1-1">
       <h2>Part 1.1: Convolutions from Scratch</h2>
@@ -304,6 +313,10 @@ print(np.allclose(grad_mag[10:-10, 10:-10], dog_grad_mag[10:-10, 10:-10]))  # Tr
       </div>
     </section>
 
+    </div>
+
+    <div class="tab-panel" id="tab-sharpening">
+
     <section class="part-section" id="part2-1">
       <h2>Part 2.1: Image "Sharpening"</h2>
       <p class="part-intro">
@@ -354,6 +367,7 @@ print(np.allclose(sharpened_2, sharpened))  # True</code></pre>
           <img src="images/part2_1/taj_sharpened.jpg" alt="Taj Mahal sharpened" />
           <figcaption>Sharpened (&alpha; = 1)</figcaption>
         </figure>
+
       </div>
 
       <h3>Varying the Sharpening Amount</h3>
@@ -426,19 +440,327 @@ print(np.allclose(sharpened_2, sharpened))  # True</code></pre>
       </div>
     </section>
 
+    </div>
+
+    <div class="tab-panel" id="tab-hybrid">
+
     <section class="part-section" id="part2-2">
       <h2>Part 2.2: Hybrid Images</h2>
-      <p class="part-intro">TODO</p>
+      <p class="part-intro">
+        In this section, we create an optical illusion which forms "hybrid images". The idea behind it is that we take the low frequencies of one image and the high frequencies of the other, and overlay them. This makes it so that at further distances, we are able to see the broader, blurry low frequency edges and up close we are able to see the higher frequency details from the other image.
+      </p>
+
+      <h3>Method</h3>
+      <p class="part-intro">
+        To take the low frequency of one image, we low-pass it with a Gaussian, and on the other image we low-pass it and subtract it from the original image. Each pass uses a different sigma based on the clarity of each image in the final merge. I checked and compared many combinations of sigmas and landed on these values below.
+      </p>
+      <pre class="code-block"><code>def gaussian(sigma):
+    ksize = int(sigma * 3) * 2 + 1
+    g = cv2.getGaussianKernel(ksize, sigma)
+    return g @ g.T
+
+def blur(im, sigma):
+    return convolve2d(im, gaussian(sigma), mode="same", boundary="symm")
+
+def hybrid_image(im1, im2, sigma1, sigma2):
+    low = blur(im1, sigma1)
+    high = im2 - blur(im2, sigma2)
+    return low, high, low + high</code></pre>
+
+      <h3>Derek + Nutmeg: Full Process</h3>
+      <div class="gallery full-image">
+        <figure>
+          <img src="images/part2_2/derek_original.jpg" alt="Derek original" />
+          <figcaption>Derek (original)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/nutmeg_original.jpg" alt="Nutmeg original" />
+          <figcaption>Nutmeg (original)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/derek_aligned.jpg" alt="Derek aligned" />
+          <figcaption>Derek (aligned)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/nutmeg_aligned.jpg" alt="Nutmeg aligned" />
+          <figcaption>Nutmeg (aligned)</figcaption>
+        </figure>
+      </div>
+      <div class="gallery full-image two-up">
+        <figure>
+          <img src="images/part2_2/derek_low.jpg" alt="Derek low-pass filtered" />
+          <figcaption>Derek, low-pass (&sigma; = 10)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/nutmeg_high.jpg" alt="Nutmeg high-pass filtered" />
+          <figcaption>Nutmeg, high-pass (&sigma; = 4)</figcaption>
+        </figure>
+      </div>
+      <p class="part-intro">
+        <strong>Fourier analysis</strong> The center of each transform represents low frequencies and
+        points further out represent higher frequencies: the low-passed Derek keeps only the bright center,
+        the high-passed Nutmeg removes it, and the hybrid contains both. The bright cross and diagonal
+        streaks come from the image borders and alignment edges, not the filtering.
+      </p>
+      <div class="gallery full-image">
+        <figure>
+          <img src="images/part2_2/fft_im1.jpg" alt="Log magnitude FFT: Image 1 (low)" />
+          <figcaption>Image 1 (low)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/fft_im2.jpg" alt="Log magnitude FFT: Image 2 (high)" />
+          <figcaption>Image 2 (high)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/fft_low.jpg" alt="Log magnitude FFT: Low-passed image 1" />
+          <figcaption>Low-passed image 1</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/fft_high.jpg" alt="Log magnitude FFT: High-passed image 2" />
+          <figcaption>High-passed image 2</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/fft_hybrid.jpg" alt="Log magnitude FFT: Hybrid" />
+          <figcaption>Hybrid</figcaption>
+        </figure>
+      </div>
+      <p class="part-intro">
+        <strong>Result</strong> Now you can see nutmeg from up close and Derek from far away!
+      </p>
+      <div class="gallery full-image single">
+        <figure>
+          <img src="images/part2_2/derek_nutmeg.jpg" alt="Derek and Nutmeg hybrid" />
+          <figcaption>Hybrid</figcaption>
+        </figure>
+      </div>
+
+      <h3>Dog + Me</h3>
+      <div class="gallery full-image">
+        <figure>
+          <img src="images/part2_2/hybrid2_im1.jpg" alt="Me, aligned" />
+          <figcaption>Me (low-pass, &sigma; = 6)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/hybrid2_im2.jpg" alt="Dog, aligned" />
+          <figcaption>Dog (high-pass, &sigma; = 3)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/hybrid2.jpg" alt="Dog + Me hybrid" />
+          <figcaption>Hybrid</figcaption>
+        </figure>
+      </div>
+
+      <h3>Mochi + Ashley</h3>
+      <div class="gallery full-image">
+        <figure>
+          <img src="images/part2_2/hybrid3_im1.jpg" alt="Ashley, aligned" />
+          <figcaption>Ashley (low-pass, &sigma; = 6)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/hybrid3_im2.jpg" alt="Mochi, aligned" />
+          <figcaption>Mochi (high-pass, &sigma; = 2)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_2/hybrid3.jpg" alt="Mochi + Ashley hybrid" />
+          <figcaption>Hybrid</figcaption>
+        </figure>
+      </div>
     </section>
+
+    </div>
+
+    <div class="tab-panel" id="tab-blending">
 
     <section class="part-section" id="part2-3">
       <h2>Part 2.3: Gaussian and Laplacian Stacks</h2>
-      <p class="part-intro">TODO</p>
+      <p class="part-intro">
+        Here we use multiresolution blending to naturally merge two images together. Instead of creating a hard border between them, we split each image into frequency bands, from fine detail to broad color, and blend each band with an increasingly blurred mask, so broad colors fade together gradually while fine details stay sharp.
+      </p>
+      <h3>Building the Stacks</h3>
+      <p class="part-intro">
+        To achieve this multiresolution blend, we use Gaussian and Laplacian stacks. The Gaussian stack
+        is the image blurred more and more at each level, without ever shrinking it. The Laplacian stack
+        holds the difference between each pair of neighboring Gaussian levels, so each level contains a
+        different band of detail, from fine edges down to broad color. We blend the two images'
+        Laplacian levels one at a time, weighting each by the mask blurred to the same level, then add
+        the blended levels together to get the final image!
+      </p>
+      <pre class="code-block"><code>def gaussian_stack(im, levels, sigma):
+    l = [im]
+    for level in range(1, levels):
+        l.append(blur(l[level - 1], sigma * 2 ** level))
+    return l
+
+def laplacian_stack(g_stack):
+    l = []
+    for i in range(len(g_stack) - 1):
+        l.append(g_stack[i] - g_stack[i + 1])
+    l.append(g_stack[-1])
+    return l</code></pre>
+
+      <h3>Apple</h3>
+      <div class="gallery full-image single-wide">
+        <figure>
+          <img src="images/part2_3/apple_gaussian.jpg" alt="Apple gaussian stack" />
+          <figcaption>Gaussian stack, levels 0&ndash;4 (left to right)</figcaption>
+        </figure>
+      </div>
+      <div class="gallery full-image single-wide">
+        <figure>
+          <img src="images/part2_3/apple_laplacian.jpg" alt="Apple laplacian stack" />
+          <figcaption>Laplacian stack, levels 0&ndash;4 (each level rescaled for display)</figcaption>
+        </figure>
+      </div>
+
+      <h3>Orange</h3>
+      <div class="gallery full-image single-wide">
+        <figure>
+          <img src="images/part2_3/orange_gaussian.jpg" alt="Orange gaussian stack" />
+          <figcaption>Gaussian stack, levels 0&ndash;4 (left to right)</figcaption>
+        </figure>
+      </div>
+      <div class="gallery full-image single-wide">
+        <figure>
+          <img src="images/part2_3/orange_laplacian.jpg" alt="Orange laplacian stack" />
+          <figcaption>Laplacian stack, levels 0&ndash;4 (each level rescaled for display)</figcaption>
+        </figure>
+      </div>
+
     </section>
 
     <section class="part-section" id="part2-4">
       <h2>Part 2.4: Multiresolution Blending</h2>
-      <p class="part-intro">TODO</p>
+      <pre class="code-block"><code>def blend(a, b, mask, levels, sigma):
+    la = laplacian_stack(gaussian_stack(a, levels, sigma))
+    lb = laplacian_stack(gaussian_stack(b, levels, sigma))
+    gm = gaussian_stack(mask, levels, sigma)
+    output = 0
+    for i in range(levels):
+        output += gm[i] * la[i] + (1 - gm[i]) * lb[i]
+    return output</code></pre>
+
+      <h3>The Oraple</h3>
+      <div class="gallery full-image three-up">
+        <figure>
+          <img src="images/part2_4/apple.jpg" alt="Apple" />
+          <figcaption>Apple</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/orange.jpg" alt="Orange" />
+          <figcaption>Orange</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/oraple.jpg" alt="Oraple" />
+          <figcaption>Oraple</figcaption>
+        </figure>
+      </div>
+
+      <h3>Recreating Figure 3.42</h3>
+      <div class="gallery full-image three-up">
+        <figure>
+          <img src="images/part2_4/fig_apple_0.jpg" alt="Masked apple, level 0" />
+          <figcaption>Apple, level 0</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/fig_orange_0.jpg" alt="Masked orange, level 0" />
+          <figcaption>Orange, level 0</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/fig_blend_0.jpg" alt="Blended, level 0" />
+          <figcaption>Blend, level 0</figcaption>
+        </figure>
+      </div>
+      <div class="gallery full-image three-up">
+        <figure>
+          <img src="images/part2_4/fig_apple_2.jpg" alt="Masked apple, level 2" />
+          <figcaption>Apple, level 2</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/fig_orange_2.jpg" alt="Masked orange, level 2" />
+          <figcaption>Orange, level 2</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/fig_blend_2.jpg" alt="Blended, level 2" />
+          <figcaption>Blend, level 2</figcaption>
+        </figure>
+      </div>
+      <div class="gallery full-image three-up">
+        <figure>
+          <img src="images/part2_4/fig_apple_4.jpg" alt="Masked apple, level 4" />
+          <figcaption>Apple, level 4</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/fig_orange_4.jpg" alt="Masked orange, level 4" />
+          <figcaption>Orange, level 4</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/fig_blend_4.jpg" alt="Blended, level 4" />
+          <figcaption>Blend, level 4</figcaption>
+        </figure>
+      </div>
+      <div class="gallery full-image three-up">
+        <figure>
+          <img src="images/part2_4/fig_apple_full.jpg" alt="Masked apple, full resolution" />
+          <figcaption>Apple, full resolution</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/fig_orange_full.jpg" alt="Masked orange, full resolution" />
+          <figcaption>Orange, full resolution</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/fig_blend_full.jpg" alt="Blended, full resolution" />
+          <figcaption>Blend, full resolution</figcaption>
+        </figure>
+      </div>
+
+      <h3>Ship in a Glass</h3>
+      <div class="gallery full-image">
+        <figure>
+          <img src="images/part2_4/blend2_a.jpg" alt="Cruise ship (scaled 0.8×)" />
+          <figcaption>Cruise ship (scaled 0.8×)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/blend2_b.jpg" alt="Glass of water" />
+          <figcaption>Glass of water</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/blend2_mask.jpg" alt="Ship in a Glass mask" />
+          <figcaption>Circular mask (irregular)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/blend2.jpg" alt="Ship in a Glass result" />
+          <figcaption>Blended</figcaption>
+        </figure>
+      </div>
+
+      <h3>Sand to Snow</h3>
+      <div class="gallery full-image">
+        <figure>
+          <img src="images/part2_4/blend3_a.jpg" alt="Sand dunes" />
+          <figcaption>Sand dunes</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/blend3_b.jpg" alt="Snow dunes" />
+          <figcaption>Snow dunes</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/blend3_mask.jpg" alt="Sand to Snow mask" />
+          <figcaption>Vertical line mask (pre-blurred, &sigma; = 40)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/part2_4/blend3.jpg" alt="Sand to Snow result" />
+          <figcaption>Blended</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    </div>
+
+    <section class="part-section" id="learned">
+      <h2>What I Learned</h2>
+      <p class="part-intro">
+        This project was super cool in teaching me how computers can process and manipulate images. I think the most important thing I learned was how to run a convolution on an image and extract a binary "edge" version with minimal noise. This is a core concept in how computers are able to "see" images and establishes a foundation in what I wanted to learn from the class!
+      </p>
     </section>
 
   </main>
@@ -447,5 +769,7 @@ print(np.allclose(sharpened_2, sharpened))  # True</code></pre>
     <p>CS180, Fall 2026 — <a href="https://cal-cs180.github.io/fa26/hw/proj2/index.html">Project 2 Assignment</a></p>
   </footer>
 
+  <script src="../js/lightbox.js"></script>
+  <script src="../js/tabs.js"></script>
 </body>
 </html>

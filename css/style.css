@@ -257,3 +257,95 @@ pre.code-block {
   padding: 0.1em 0.35em;
   border-radius: 6px;
 }
+
+.gallery.single-wide {
+  grid-template-columns: 1fr;
+  margin-bottom: 1.5rem;
+}
+
+/* --- click-to-enlarge image viewer (js/lightbox.js) --- */
+
+figure img {
+  cursor: zoom-in;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: rgba(20, 14, 32, 0.88);
+  cursor: zoom-out;
+}
+
+.lightbox.open {
+  display: flex;
+}
+
+.lightbox img {
+  max-width: 92vw;
+  max-height: 84vh;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  background: #fff;
+}
+
+.lightbox-caption {
+  margin: 0;
+  color: #f6f2fc;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* --- proj2: sub-tabs (js/tabs.js) --- */
+
+.sub-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 2rem 0 0;
+  padding: 0.75rem 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.sub-tabs a {
+  color: var(--lavender-darker);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sub-tabs a:hover {
+  background: var(--bg-alt);
+}
+
+.sub-tabs a.current {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Without JavaScript every panel stays visible; with it, only the active one shows. */
+.tabs-ready .tab-panel {
+  display: none;
+}
+
+.tabs-ready .tab-panel.active {
+  display: block;
+}
